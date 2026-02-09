@@ -1,0 +1,10 @@
+2026-02-09 20:41:37,405 - __main__ - INFO - Application started
+2026-02-09 20:41:37,427 - __main__ - INFO - Loaded schema: example_customer_feedback.json
+2026-02-09 20:41:37,431 - __main__ - INFO - Initialized version control for schema: example_customer_feedback
+2026-02-09 20:41:39,513 - __main__ - INFO - Application started
+2026-02-09 20:41:39,520 - __main__ - INFO - Loaded schema: example_customer_feedback.json
+2026-02-09 20:41:39,522 - __main__ - INFO - Initialized version control for schema: example_customer_feedback
+2026-02-09 20:41:49,846 - __main__ - INFO - Application started
+2026-02-09 20:41:49,902 - __main__ - INFO - Loaded schema: schema.json
+2026-02-09 20:41:49,908 - __main__ - INFO - Created new changelog file: schema_versions\schema\changelog.json
+2026-02-09 20:41:49,910 - __main__ - INFO - Initialized version control for schema: schema

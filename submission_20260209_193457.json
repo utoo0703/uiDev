@@ -1,0 +1,24 @@
+{
+  "country": {
+    "selectionList": [
+      "IN",
+      "CN"
+    ]
+  },
+  "country_bank_wide": {},
+  "country_all": {
+    "selectionList": [
+      "IN",
+      "HK"
+    ]
+  },
+  "owners": [
+    {
+      "oneBankId": "utsavusarkar",
+      "fullName": "Utsav"
+    }
+  ],
+  "busu": {
+    "selection": "Institutional Banking Group"
+  }
+}

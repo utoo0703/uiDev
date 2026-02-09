@@ -1,0 +1,245 @@
+{
+  "type": "object",
+  "properties": {
+    "country": { "$ref": "#/definitions/country" },
+    "country_bank_wide": { "$ref": "#/definitions/country_bank_wide" },
+    "country_all": { "$ref": "#/definitions/country_all" },
+    "owners": { "$ref": "#/definitions/owners" },
+    "busu": { "$ref": "#/definitions/busu" }
+  },
+
+  "definitions": {
+    "country": {
+      "type": "object",
+      "properties": {
+        "selectionList": {
+          "title": "Please select",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["SG", "ID", "IN", "CN", "HK", "TW", "Others"]
+          },
+          "uniqueItems": true
+        },
+        "other": {
+          "allOf": [
+            { "$ref": "#/definitions/other" }
+          ],
+          "description": "Please specify. Separate values with commas.",
+          "minLength": 2,
+          "maxLength": 20
+        }
+      },
+      "allOf": [
+        { "$ref": "#/definitions/if_selectionList_other_then_else" }
+      ],
+      "additionalProperties": false
+    },
+
+    "country_bank_wide": {
+      "type": "object",
+      "properties": {
+        "selectionList": {
+          "title": "Please select",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["SG", "ID", "IN", "CN", "HK", "TW", "Bank-wide", "Others"]
+          },
+          "uniqueItems": true
+        },
+        "other": {
+          "allOf": [
+            { "$ref": "#/definitions/other" }
+          ],
+          "description": "Please specify. Separate values with commas.",
+          "minLength": 2,
+          "maxLength": 20
+        }
+      },
+      "allOf": [
+        { "$ref": "#/definitions/if_selectionList_other_then_else" }
+      ],
+      "additionalProperties": false
+    },
+
+    "country_all": {
+      "type": "object",
+      "properties": {
+        "selectionList": {
+          "title": "Please select",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ALL", "CN", "HK", "ID", "IN", "SG", "TW", "Bank-wide", "Others"]
+          },
+          "uniqueItems": true
+        },
+        "other": {
+          "allOf": [
+            { "$ref": "#/definitions/other" }
+          ],
+          "description": "Please specify. Separate values with commas.",
+          "minLength": 2,
+          "maxLength": 20
+        }
+      },
+      "allOf": [
+        { "$ref": "#/definitions/if_selectionList_other_then_else" }
+      ],
+      "additionalProperties": false
+    },
+
+    "owners": {
+      "type": "array",
+      "title": "Owners",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/employee" },
+      "uniqueItems": true
+    },
+
+    "employee": {
+      "type": "object",
+      "properties": {
+        "oneBankId": { "type": "string" },
+        "fullName": { "type": "string" }
+      },
+      "required": ["oneBankId"]
+    },
+
+    "other": {
+      "type": "string",
+      "title": "Others",
+      "description": "Please specify"
+    },
+
+    "if_selectionList": {
+      "properties": {
+        "selectionList": {
+          "type": "array",
+          "contains": { "const": "Others" }
+        }
+      },
+      "required": ["selectionList"]
+    },
+
+    "then_other": {
+      "required": ["other"]
+    },
+
+    "else_not_other": {
+      "not": {
+        "properties": {
+          "other": { "type": "string" }
+        },
+        "required": ["other"]
+      }
+    },
+
+    "if_selectionList_other_then_else": {
+      "if": { "$ref": "#/definitions/if_selectionList" },
+      "then": { "$ref": "#/definitions/then_other" },
+      "else": { "$ref": "#/definitions/else_not_other" }
+    },
+
+    "busu": {
+      "type": "object",
+      "title": "Business/Support Unit",
+      "properties": {
+        "selection": {
+          "type": "string",
+          "enum": [
+            "Capital Markets",
+            "Consumer Banking Group",
+            "Group Audit",
+            "Group Finance",
+            "Group Human Resource",
+            "Group Planning",
+            "Group Research",
+            "Group Strategic Marketing & Communications",
+            "Group Strategy, Transformation, Analytics and Research",
+            "Institutional Banking Group",
+            "Legal, Compliance & Secretariat",
+            "Risk Management Group",
+            "Technology & Operations",
+            "Treasury & Markets"
+          ]
+        },
+
+        "toDepartment": {
+          "type": "string",
+          "enum": [
+            "Consumer Banking Ops",
+            "Institutional Banking Group Ops",
+            "Customer Centre",
+            "Treasury & Market Ops",
+            "Enterprise Architecture & Site Reliability Engineering (EASRE)",
+            "Tech Services (TS)",
+            "CBG Tech and Core Engines",
+            "IBG Tech and Future Ready",
+            "Investment & Trading Technology",
+            "Middle Office Technology (MOT)",
+            "Cloud Engineering Services",
+            "Information Security Services (ISS)",
+            "Corporate Real Estate Strategy & Admin (CRESA)",
+            "Group Procurement & Services (GPS)",
+            "Ops Risk Management",
+            "Operations Transformation & Communications (OTC)",
+            "People Transformation & Planning (PTP)",
+            "Technology Risk Management (TRM)",
+            "Group Business Continuity Management",
+            "Technology",
+            "Data Platform",
+            "Ops COO"
+          ]
+        },
+
+        "rmgDepartment": {
+          "type": "string",
+          "enum": [
+            "CBG Credit",
+            "Regulatory Portfolio Analytics",
+            "Market & Liquidity Risk",
+            "Model Validation",
+            "IBG Credit",
+            "Data Chapter Risk & Business Analytics",
+            "Traded Credit Risk Method (TCRM)"
+          ]
+        }
+      },
+
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "selection": { "const": "Technology & Operations" }
+            },
+            "required": ["selection"]
+          },
+          "then": { "required": ["toDepartment"] },
+          "else": {
+            "not": {
+              "required": ["toDepartment"]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "selection": { "const": "Risk Management Group" }
+            },
+            "required": ["selection"]
+          },
+          "then": { "required": ["rmgDepartment"] },
+          "else": {
+            "not": {
+              "required": ["rmgDepartment"]
+            }
+          }
+        }
+      ],
+
+      "additionalProperties": false
+    }
+  }
+}
