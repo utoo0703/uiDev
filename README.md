@@ -138,19 +138,20 @@ def render_viewer_screen():
         mime="application/json",
     )
 
-    # State-based actions
+    # State-based actions (draft only)
     if record["state"] == "draft":
 
-        # Submit dialog — promotes draft to active directly from Viewer
+        # Submit dialog — promotes this draft to active as-is
         @st.dialog("Confirm Submit")
         def _viewer_submit_dialog():
             st.write(
-                "Promote this version to **active**? "
+                f"Promote **{record['version']}** to active? "
                 "The current active version will be archived."
             )
             if st.button("Confirm Submit", key="viewer_submit_confirm"):
                 versions = _versions()
                 prev_active = _active_version()
+                # Promote this draft in-place
                 for v in versions:
                     if v["version"] == record["version"]:
                         v["state"] = "active"
@@ -168,12 +169,12 @@ def render_viewer_screen():
                 st.balloons()
                 st.success("Version promoted to active.")
                 time.sleep(1.5)
-                _go("main", selected_version=None)
+                _go("main")
                 st.rerun()
 
-        b1, b2 = st.columns(2)
-        with b1:
-            if st.button("Edit Draft"):
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Edit Draft", use_container_width=True):
                 _go(
                     "editor",
                     editor_mode="edit",
@@ -181,6 +182,6 @@ def render_viewer_screen():
                     editor_source_version=record["version"],
                 )
                 st.rerun()
-        with b2:
-            if st.button("Submit"):
+        with c2:
+            if st.button("Submit", use_container_width=True):
                 _viewer_submit_dialog()
