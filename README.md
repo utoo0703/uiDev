@@ -79,6 +79,27 @@ Opens an st.dialog for confirmation.
 
 Upon confirmation, save the payload, change its state to active (is_active: True), set the previous active version to archived (is_active: False), update the new active version's rollback_id to point to the archived version, show st.balloons(), time.sleep(1.5), and route to Main.
 
+import json
+from pathlib import Path
+
+SCHEMA_DIR = Path(__file__).parent / "schemas"
+
+def _build_store():
+    store = {}
+    for asset_type in ["usecase_schema", "model_schema", "experiment_schema", "code_schema"]:
+        with open(SCHEMA_DIR / f"{asset_type}.json") as f:
+            payload = json.load(f)
+        store[asset_type] = [{
+            "version": "v1",
+            "state": "active",
+            "is_active": True,
+            "uploaded_by": "admin@alan.io",
+            "last_updated": "2025-06-10",
+            "rollback_id": None,
+            "payload": payload,
+        }]
+    return store
+
 Styling Constraints:
 
 Inject minimal custom CSS (st.markdown(..., unsafe_allow_html=True)) for a professional White and Red theme (e.g., white backgrounds, red primary buttons, red headers). Keep CSS under 20 lines.
