@@ -79,27 +79,108 @@ Opens an st.dialog for confirmation.
 
 Upon confirmation, save the payload, change its state to active (is_active: True), set the previous active version to archived (is_active: False), update the new active version's rollback_id to point to the archived version, show st.balloons(), time.sleep(1.5), and route to Main.
 
+"""Viewer screen: read-only schema display with metadata and download."""
+
+import copy
 import json
-from pathlib import Path
+import time
 
-SCHEMA_DIR = Path(__file__).parent / "schemas"
+import streamlit as st
 
-def _build_store():
-    store = {}
-    for asset_type in ["usecase_schema", "model_schema", "experiment_schema", "code_schema"]:
-        with open(SCHEMA_DIR / f"{asset_type}.json") as f:
-            payload = json.load(f)
-        store[asset_type] = [{
-            "version": "v1",
-            "state": "active",
-            "is_active": True,
-            "uploaded_by": "admin@alan.io",
-            "last_updated": "2025-06-10",
-            "rollback_id": None,
-            "payload": payload,
-        }]
-    return store
+from components.schema_form import render_schema_form
+from state import _active_version, _go, _versions
 
-Styling Constraints:
 
-Inject minimal custom CSS (st.markdown(..., unsafe_allow_html=True)) for a professional White and Red theme (e.g., white backgrounds, red primary buttons, red headers). Keep CSS under 20 lines.
+def render_viewer_screen():
+    ver_id = st.session_state.selected_version
+    record = None
+    for v in _versions():
+        if v["version"] == ver_id:
+            record = v
+            break
+    if not record:
+        st.error("Version not found.")
+        if st.button("Back to Main"):
+            _go("main")
+            st.rerun()
+        st.stop()
+
+    if st.button("Back to Main"):
+        _go("main")
+        st.rerun()
+
+    st.markdown(
+        f"## Viewer  --  "
+        f"{st.session_state.asset_type.replace('_', ' ').title()} / {record['version']}"
+    )
+
+    # Metadata card
+    st.markdown(
+        f'<div class="meta-card">'
+        f'<b>Uploaded by:</b> {record["uploaded_by"]} &nbsp;|&nbsp; '
+        f'<b>Last Updated:</b> {record["last_updated"]} &nbsp;|&nbsp; '
+        f'<b>State:</b> {record["state"]}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Form-like read-only view
+    st.markdown("### Schema Payload")
+    render_schema_form(record["payload"], editable=False, key_prefix="view")
+
+    # Download
+    st.download_button(
+        "Download Schema (JSON)",
+        data=json.dumps(
+            {"version": record["version"], "payload": record["payload"]},
+            indent=2,
+        ),
+        file_name=f"{st.session_state.asset_type}_{record['version']}.json",
+        mime="application/json",
+    )
+
+    # State-based actions
+    if record["state"] == "draft":
+
+        # Submit dialog — promotes draft to active directly from Viewer
+        @st.dialog("Confirm Submit")
+        def _viewer_submit_dialog():
+            st.write(
+                "Promote this version to **active**? "
+                "The current active version will be archived."
+            )
+            if st.button("Confirm Submit", key="viewer_submit_confirm"):
+                versions = _versions()
+                prev_active = _active_version()
+                for v in versions:
+                    if v["version"] == record["version"]:
+                        v["state"] = "active"
+                        v["is_active"] = True
+                        v["rollback_id"] = (
+                            prev_active["version"] if prev_active else None
+                        )
+                        v["last_updated"] = time.strftime("%Y-%m-%d")
+                        break
+                # Ensure single active
+                for v in versions:
+                    if v["is_active"] and v["version"] != record["version"]:
+                        v["state"] = "archived"
+                        v["is_active"] = False
+                st.balloons()
+                st.success("Version promoted to active.")
+                time.sleep(1.5)
+                _go("main", selected_version=None)
+                st.rerun()
+
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("Edit Draft"):
+                _go(
+                    "editor",
+                    editor_mode="edit",
+                    editor_payload=copy.deepcopy(record["payload"]),
+                    editor_source_version=record["version"],
+                )
+                st.rerun()
+        with b2:
+            if st.button("Submit"):
+                _viewer_submit_dialog()
