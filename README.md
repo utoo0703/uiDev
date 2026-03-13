@@ -123,57 +123,56 @@ def render_viewer_screen():
         unsafe_allow_html=True,
     )
 
-    # Form-like read-only view
-    st.markdown("### Schema Payload")
-    render_schema_form(record["payload"], editable=False, key_prefix="view")
+    # ------------------------------------------------------------------
+    # Action bar: buttons ABOVE the schema so they are always visible
+    # ------------------------------------------------------------------
 
-    # Download
-    st.download_button(
-        "Download Schema (JSON)",
-        data=json.dumps(
-            {"version": record["version"], "payload": record["payload"]},
-            indent=2,
-        ),
-        file_name=f"{st.session_state.asset_type}_{record['version']}.json",
-        mime="application/json",
-    )
+    # Submit dialog — defined at top level of function so Streamlit
+    # registers it on every rerun regardless of state
+    @st.dialog("Confirm Submit")
+    def _viewer_submit_dialog():
+        st.write(
+            f"Promote **{record['version']}** to active? "
+            "The current active version will be archived."
+        )
+        if st.button("Confirm Submit", key="viewer_submit_confirm"):
+            versions = _versions()
+            prev_active = _active_version()
+            for v in versions:
+                if v["version"] == record["version"]:
+                    v["state"] = "active"
+                    v["is_active"] = True
+                    v["rollback_id"] = (
+                        prev_active["version"] if prev_active else None
+                    )
+                    v["last_updated"] = time.strftime("%Y-%m-%d")
+                    break
+            # Ensure single active
+            for v in versions:
+                if v["is_active"] and v["version"] != record["version"]:
+                    v["state"] = "archived"
+                    v["is_active"] = False
+            st.balloons()
+            st.success("Version promoted to active.")
+            time.sleep(1.5)
+            _go("main")
+            st.rerun()
 
-    # State-based actions (draft only)
+    # Layout: Download always | Draft also gets Edit + Submit
     if record["state"] == "draft":
-
-        # Submit dialog — promotes this draft to active as-is
-        @st.dialog("Confirm Submit")
-        def _viewer_submit_dialog():
-            st.write(
-                f"Promote **{record['version']}** to active? "
-                "The current active version will be archived."
-            )
-            if st.button("Confirm Submit", key="viewer_submit_confirm"):
-                versions = _versions()
-                prev_active = _active_version()
-                # Promote this draft in-place
-                for v in versions:
-                    if v["version"] == record["version"]:
-                        v["state"] = "active"
-                        v["is_active"] = True
-                        v["rollback_id"] = (
-                            prev_active["version"] if prev_active else None
-                        )
-                        v["last_updated"] = time.strftime("%Y-%m-%d")
-                        break
-                # Ensure single active
-                for v in versions:
-                    if v["is_active"] and v["version"] != record["version"]:
-                        v["state"] = "archived"
-                        v["is_active"] = False
-                st.balloons()
-                st.success("Version promoted to active.")
-                time.sleep(1.5)
-                _go("main")
-                st.rerun()
-
-        c1, c2 = st.columns(2)
+        c1, c2, c3 = st.columns(3)
         with c1:
+            st.download_button(
+                "Download Schema (JSON)",
+                data=json.dumps(
+                    {"version": record["version"], "payload": record["payload"]},
+                    indent=2,
+                ),
+                file_name=f"{st.session_state.asset_type}_{record['version']}.json",
+                mime="application/json",
+                use_container_width=True,
+            )
+        with c2:
             if st.button("Edit Draft", use_container_width=True):
                 _go(
                     "editor",
@@ -182,6 +181,25 @@ def render_viewer_screen():
                     editor_source_version=record["version"],
                 )
                 st.rerun()
-        with c2:
+        with c3:
             if st.button("Submit", use_container_width=True):
                 _viewer_submit_dialog()
+    else:
+        # Active / Archived — download only
+        st.download_button(
+            "Download Schema (JSON)",
+            data=json.dumps(
+                {"version": record["version"], "payload": record["payload"]},
+                indent=2,
+            ),
+            file_name=f"{st.session_state.asset_type}_{record['version']}.json",
+            mime="application/json",
+        )
+
+    st.divider()
+
+    # ------------------------------------------------------------------
+    # Schema payload — read-only form, below the action bar
+    # ------------------------------------------------------------------
+    st.markdown("### Schema Payload")
+    render_schema_form(record["payload"], editable=False, key_prefix="view")
