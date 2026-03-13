@@ -204,6 +204,7 @@ if st.session_state.screen == "main":
                     if v["version"] == target_id:
                         v["state"] = "active"
                         v["is_active"] = True
+                        v["rollback_id"] = None
                     if v["version"] == active["version"]:
                         v["state"] = "archived"
                         v["is_active"] = False
@@ -325,7 +326,10 @@ elif st.session_state.screen == "editor":
     source_ver = st.session_state.editor_source_version
 
     if st.button("Cancel"):
-        _go("main" if mode == "clone" else "viewer")
+        if mode == "clone":
+            _go("main")
+        else:
+            _go("viewer", selected_version=source_ver)
         st.rerun()
 
     label = "Clone from Active" if mode == "clone" else f"Edit Draft {source_ver}"
@@ -383,7 +387,7 @@ elif st.session_state.screen == "editor":
                     "state": "active",
                     "is_active": True,
                     "uploaded_by": "admin@alan.io",
-                    "last_updated": "2025-06-15",
+                    "last_updated": time.strftime("%Y-%m-%d"),
                     "rollback_id": prev_active["version"] if prev_active else None,
                     "payload": edited_payload,
                 }
@@ -397,12 +401,12 @@ elif st.session_state.screen == "editor":
                         v["is_active"] = True
                         v["rollback_id"] = prev_active["version"] if prev_active else None
                         break
-            # Archive previous active
-            if prev_active:
-                for v in versions:
-                    if v["version"] == prev_active["version"] and v["version"] != (source_ver if mode == "edit" else ""):
-                        v["state"] = "archived"
-                        v["is_active"] = False
+            # Ensure single active: archive any version that isn't the newly promoted one
+            newly_active_ver = new_rec["version"] if mode == "clone" else source_ver
+            for v in versions:
+                if v["is_active"] and v["version"] != newly_active_ver:
+                    v["state"] = "archived"
+                    v["is_active"] = False
             st.balloons()
             st.success("Version promoted to active.")
             time.sleep(1.5)
@@ -421,7 +425,7 @@ elif st.session_state.screen == "editor":
                     "state": "draft",
                     "is_active": False,
                     "uploaded_by": "admin@alan.io",
-                    "last_updated": "2025-06-15",
+                    "last_updated": time.strftime("%Y-%m-%d"),
                     "rollback_id": None,
                     "payload": edited_payload,
                 })
